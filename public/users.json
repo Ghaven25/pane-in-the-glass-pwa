@@ -1,0 +1,5 @@
+[
+  {"email":"admin@pane.glass","pin":"admin","name":"Admin","role":"admin"},
+  {"email":"roman@pane.glass","pin":"1234","name":"Roman Cruz","role":"worker"},
+  {"email":"jay@pane.glass","pin":"1234","name":"Jay","role":"worker"}
+]

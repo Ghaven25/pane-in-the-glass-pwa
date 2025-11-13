@@ -1,0 +1,57 @@
+/* src/ui/responsive.css */
+
+/* iOS: stop input auto-zoom; stabilize text sizing */
+html { -webkit-text-size-adjust: 100%; }
+input, select, textarea, button { font-size: 16px; }
+
+:root { --pad: 12px; --gap: 10px; --fg: var(--text, #0f172a); }
+#root { padding: var(--pad); }
+
+.card { padding: 12px; border-radius: 12px; overflow: hidden; }
+.section-title { font-weight: 800; }
+
+/* Tables */
+.table { width: 100%; border-collapse: collapse; }
+.table th, .table td {
+  padding: 8px 10px;
+  vertical-align: middle;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Inputs/selects span full cell width */
+input[type="text"], input[type="date"], input[type="time"], select, textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Helpers */
+.break-all { word-break: break-word; overflow-wrap: anywhere; }
+.nowrap { white-space: nowrap; }
+
+/* Header/title sizing with graceful shrink */
+.app-title, .site-title, h1, h2.section-title {
+  font-size: clamp(16px, 3.8vw, 22px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Flex/grid defaults */
+.row { display: flex; gap: var(--gap); flex-wrap: wrap; }
+.grid { display: grid; gap: var(--gap); }
+
+/* ===== Mobile breakpoint ===== */
+@media (max-width: 480px) {
+  html { font-size: 14px; }        /* overall smaller */
+  body { line-height: 1.25; }
+  #root { padding: 10px; }
+  .card { padding: 10px; }
+  .btn { padding: 8px 10px; font-size: 13px; }
+
+  /* keep table headers on one line; let table scroll instead */
+  .table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table thead, .table tbody, .table tr { display: table; width: 100%; table-layout: fixed; }
+  .table th { font-size: 12px; white-space: nowrap; }
+  .table td { font-size: 12.5px; }
+}

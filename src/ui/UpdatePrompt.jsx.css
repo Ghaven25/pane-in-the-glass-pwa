@@ -1,0 +1,50 @@
+// src/ui/UpdatePrompt.jsx
+import React, { useEffect, useState } from "react";
+import { useRegisterSW } from "virtual:pwa-register/react";
+
+export default function UpdatePrompt() {
+  const [show, setShow] = useState(false);
+
+  const { needRefresh, offlineReady, updateServiceWorker } = useRegisterSW({
+    onRegistered() {},
+    onRegisterError(e) { console.error("SW register error:", e); },
+  });
+
+  // show only when a fresh version is ready
+  useEffect(() => {
+    if (needRefresh) setShow(true);
+  }, [needRefresh]);
+
+  if (!show && !offlineReady) return null;
+
+  return (
+    <div className="update-toast" role="status" aria-live="polite">
+      <div className="update-toast__content">
+        {offlineReady && !needRefresh && (
+          <span>Offline ready.</span>
+        )}
+        {needRefresh && (
+          <>
+            <span>New version available.</span>
+            <div className="update-toast__actions">
+              <button
+                className="btn"
+                onClick={() => updateServiceWorker(true)}
+                aria-label="Update now"
+              >
+                Update
+              </button>
+              <button
+                className="btn outline"
+                onClick={() => setShow(false)}
+                aria-label="Dismiss"
+              >
+                Later
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

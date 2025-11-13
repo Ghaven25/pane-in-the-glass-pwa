@@ -1,0 +1,180 @@
+// src/views/hybrid/HybridCalendar.jsx
+import React from "react";
+import AdminHybridBadge from "../../ui/AdminHybridBadge.jsx";
+
+/* storage */
+const read = (k, fb) => { try { return JSON.parse(localStorage.getItem(k) ?? JSON.stringify(fb)); } catch { return fb; } };
+const write = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+const getUser = () => { try { return JSON.parse(localStorage.getItem("pane_user") || "null"); } catch { return null; } };
+const readAssignments = () => read("assignments", []);
+
+/* date */
+const startOfDay = (d) => { const x=new Date(d); x.setHours(0,0,0,0); return x; };
+const addDays = (d,n)=> { const x=new Date(d); x.setDate(x.getDate()+n); return x; };
+const toISODate = d => startOfDay(d).toISOString().slice(0,10);
+const fmtColHeader = d => d.toLocaleDateString([], { weekday:'short', month:'short', day:'numeric' });
+const shortDow = d => d.toLocaleDateString([], { weekday:'short' }).slice(0,3);
+
+/* availability API */
+const readAvail  = () => read("availability", []);
+const writeAvail = (rows) => write("availability", rows);
+
+function readHoursFor(userEmail, role, dowShort){
+  const rows = readAvail();
+  const hit = rows.find(r=>r.userEmail===userEmail && r.role===role && r.day===dowShort);
+  return hit?.hours || "";
+}
+function setHoursFor(userEmail, role, dowShort, hours){
+  const all = readAvail();
+  const idx = all.findIndex(r=>r.userEmail===userEmail && r.role===role && r.day===dowShort);
+  if(idx===-1){
+    all.push({ userEmail, role, day:dowShort, hours:(hours||"").trim() });
+  }else{
+    all[idx] = { ...all[idx], hours:(hours||"").trim() };
+  }
+  writeAvail(all);
+}
+
+export default function HybridCalendar(){
+  const me = getUser();
+  const myEmail = (me?.email && String(me.email).trim()!=='') ? me.email : "admin@pitg.local";
+
+  // 14 rolling days
+  const days = React.useMemo(()=>{
+    const t = startOfDay(new Date());
+    return Array.from({length:14}, (_,i)=> addDays(t,i));
+  },[]);
+
+  // keep assignments live (only used to show locks when jobs exist)
+  const [assignments, setAssignments] = React.useState(readAssignments());
+  React.useEffect(()=>{
+    const t = setInterval(()=> setAssignments(readAssignments()), 1500);
+    return ()=> clearInterval(t);
+  },[]);
+
+  // Only lock days for *accepted/assigned* jobs; ignore offers
+  const byDowHasJob = React.useMemo(()=>{
+    const set = new Set();
+    const SHORTS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const actionable = (assignments||[]).filter(a => a?.status === 'accepted' || a?.status === 'assigned');
+    for(const a of actionable){
+      const when = (a.when||"").toLowerCase();
+      const short = SHORTS.find(s=> when.includes(s.toLowerCase()));
+      if(short) set.add(short);
+    }
+    return set;
+  }, [assignments]);
+
+  const isLocked = (dateObj)=>{
+    const today = startOfDay(new Date());
+    const d = startOfDay(dateObj);
+    const diff = Math.round((d - today)/(24*60*60*1000));
+    const within2 = diff <= 2 && diff >= 0;
+    const hasJob  = byDowHasJob.has(shortDow(dateObj));
+    return within2 || hasJob;
+  };
+
+  return (
+    <div className="grid">
+      {/* Admin-only (optional) name tag */}
+      <AdminHybridBadge />
+
+      {/* Worker availability (self) */}
+      <div className="card">
+        <h2 className="section-title">My Worker Calendar (Rolling 2 Weeks)</h2>
+        <div style={{ overflowX:"auto" }}>
+          <table className="table" style={{ minWidth: 900 }}>
+            <thead>
+              <tr>
+                <th style={{width:240}}>Me ({me?.name || "User"})</th>
+                {days.map(d=> <th key={d.toISOString()}>{fmtColHeader(d)}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={{fontWeight:700}}>{me?.name || "You"} {(me?.role==='admin') ? "(Admin)" : "(Hybrid)"}</td>
+                {days.map(d=>{
+                  const short = shortDow(d);
+                  const value = readHoursFor(myEmail,'worker',short);
+                  const locked = isLocked(d);
+                  return (
+                    <td key={toISODate(d)}>
+                      <div style={{display:'flex', gap:6, alignItems:'center'}}>
+                        {locked && <span title="Locked"><span role="img" aria-label="locked">🔒</span></span>}
+                        <input
+                          value={value}
+                          onChange={(e)=> !locked && setHoursFor(myEmail,'worker',short,e.target.value)}
+                          placeholder="hours"
+                          disabled={locked}
+                          style={{
+                            width:'100%',
+                            padding:'6px 8px',
+                            border:'1px solid var(--border)',
+                            borderRadius:8,
+                            outline:'none',
+                            background:'var(--card)',
+                            color:'var(--text)',
+                            fontWeight:600
+                          }}
+                        />
+                      </div>
+                    </td>
+                  )
+                })}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Seller availability (self) */}
+      <div className="card">
+        <h2 className="section-title">My Seller Calendar (Rolling 2 Weeks)</h2>
+        <div style={{ overflowX:"auto" }}>
+          <table className="table" style={{ minWidth: 900 }}>
+            <thead>
+              <tr>
+                <th style={{width:240}}>Me ({me?.name || "User"})</th>
+                {days.map(d=> <th key={d.toISOString()}>{fmtColHeader(d)}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={{fontWeight:700}}>{me?.name || "You"} {(me?.role==='admin') ? "(Admin)" : "(Hybrid)"}</td>
+                {days.map(d=>{
+                  const short = shortDow(d);
+                  // Sellers: editable unless explicit job on that day
+                  const hasJob = byDowHasJob.has(short);
+                  const value  = readHoursFor(myEmail,'seller',short);
+                  return (
+                    <td key={toISODate(d)}>
+                      <div style={{display:'flex', gap:6, alignItems:'center'}}>
+                        {hasJob && <span title="Locked"><span role="img" aria-label="locked">🔒</span></span>}
+                        <input
+                          value={value}
+                          onChange={(e)=> !hasJob && setHoursFor(myEmail,'seller',short,e.target.value)}
+                          placeholder="hours"
+                          disabled={hasJob}
+                          style={{
+                            width:'100%',
+                            padding:'6px 8px',
+                            border:'1px solid var(--border)',
+                            borderRadius:8,
+                            outline:'none',
+                            background:'var(--card)',
+                            color:'var(--text)',
+                            fontWeight:600
+                          }}
+                        />
+                      </div>
+                    </td>
+                  )
+                })}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
