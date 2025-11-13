@@ -1,6 +1,7 @@
 // src/ui/Header.jsx
 import React from "react"
 import { NavLink } from "react-router-dom"
+import MapPage from "./MapPage";
 
 function Header() {
   const user = JSON.parse(localStorage.getItem("pane_user") || "null") || {}
@@ -12,6 +13,7 @@ function Header() {
       { to: "/finished", label: "Job Finished" },
       { to: "/seller", label: "Sales" },
       { to: "/seller/payments", label: "Payments" },
+      { to: "/map", label: "Map" },
     ],
     worker: [
       { to: "/worker", label: "Home" },
@@ -25,6 +27,7 @@ function Header() {
       { to: "/finished", label: "Job Finished" },
       { to: "/hybrid/payments", label: "Payments" },
       { to: "/seller", label: "Sales" },
+      { to: "/map", label: "Map" },
     ],
     admin: [
       { to: "/admin/home", label: "Home" },
@@ -32,6 +35,7 @@ function Header() {
       { to: "/admin/past", label: "Past Jobs" },
       { to: "/admin/money", label: "Money" },
       { to: "/admin/employees", label: "Employees" },
+      { to: "/map", label: "Map" },
     ],
   }
 

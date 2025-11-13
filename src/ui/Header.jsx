@@ -110,6 +110,7 @@ export default function Header() {
       { to: "/admin/past", label: "Past" },
       { to: "/admin/money", label: "Money" },
       { to: "/admin/employees", label: "Employees" },
+      { to: "/map", label: "Map" },
     ] :
     isHybrid ? [
       { to: "/hybrid/home", label: "Home" },
@@ -117,11 +118,13 @@ export default function Header() {
       { to: "/finished", label: "Job Finished" },
       { to: "/seller", label: "Sales" },
       { to: "/hybrid/payments", label: "Payments" },
+      { to: "/map", label: "Map" },
     ] :
     isSeller ? [
       { to: "/seller/home", label: "Home" },
       { to: "/seller", label: "Sales" },
       { to: "/calendar/sellers", label: "My Calendar" },
+      { to: "/map", label: "Map" },
     ] :
     isWorker ? [
       { to: "/worker", label: "Home" },
